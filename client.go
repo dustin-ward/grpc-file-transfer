@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+	// Dial address
 	var conn *grpc.ClientConn
 	conn, err := grpc.Dial(":9000", grpc.WithInsecure())
 	if err != nil {
@@ -25,12 +26,15 @@ func main() {
 		log.Fatalf("unable to open file")
 	}
 
+	// Establish connection with gRPC server
 	c := fileStreaming.NewFileUploadServiceClient(conn)
 	stream, err := c.Upload(context.Background())
 	if err != nil {
 		log.Fatalf("error establishing upload")
 	}
 
+	// Break file into chunks and send to server
+	log.Println("Starting transfer...")
 	buf := make([]byte, fileStreaming.CHUNK_SIZE)
 	for {
 		n, err := f.Read(buf)
@@ -50,6 +54,7 @@ func main() {
 		}
 	}
 
+	// Ask to close connection
 	status, err := stream.CloseAndRecv()
 	if err != nil {
 		log.Fatalf("error retrieving status")
@@ -57,6 +62,6 @@ func main() {
 	if status.Code != fileStreaming.UploadStatusCode_Ok {
 		log.Fatalf("Error, file transfer finished with non-ok status")
 	} else {
-		println("File Transfer Complete!")
+		log.Println("File Transfer Complete!")
 	}
 }
